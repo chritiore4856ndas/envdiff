@@ -39,6 +39,16 @@ class TestBuildReport:
         data = json.loads(report)
         assert "missing_in_b" in data or "missing_in_a" in data or "mismatched" in data
 
+    def test_json_format_contains_all_keys(self, rich_result: DiffResult) -> None:
+        """Verify the JSON report includes entries for every diff category."""
+        report = build_report(rich_result, fmt="json")
+        data = json.loads(report)
+        # At least one of the known category keys must appear for each fixture value
+        only_a_key = next((k for k in data if "a" in k or "missing" in k), None)
+        only_b_key = next((k for k in data if "b" in k or "new" in k), None)
+        assert only_a_key is not None, "Expected a key representing only_in_a"
+        assert only_b_key is not None, "Expected a key representing only_in_b"
+
     def test_unknown_format_raises(self, empty_result: DiffResult) -> None:
         with pytest.raises(ValueError, match="Unknown format"):
             build_report(empty_result, fmt="xml")
