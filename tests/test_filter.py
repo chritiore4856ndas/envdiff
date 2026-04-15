@@ -67,3 +67,12 @@ def test_empty_result_stays_empty() -> None:
     assert not filtered.only_in_b
     assert not filtered.mismatched
     assert not filtered.common_keys
+
+
+def test_include_wildcard_matches_all(rich_result: DiffResult) -> None:
+    """An include pattern of '.*' should keep everything, same as no filter."""
+    filtered = filter_diff(rich_result, include_patterns=[".*"])
+    assert filtered.only_in_a == rich_result.only_in_a
+    assert filtered.only_in_b == rich_result.only_in_b
+    assert filtered.mismatched == rich_result.mismatched
+    assert filtered.common_keys == rich_result.common_keys
