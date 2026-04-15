@@ -70,5 +70,16 @@ def test_total_counts_all_keys(rich_result: DiffResult) -> None:
     assert grouped.total == 6
 
 
+def test_total_is_zero_for_empty(empty_result: DiffResult) -> None:
+    grouped = group_diff(empty_result)
+    assert grouped.total == 0
+
+
+def test_total_matches_sum_of_group_lengths(rich_result: DiffResult) -> None:
+    grouped = group_diff(rich_result)
+    expected = len(grouped.missing_in_b) + len(grouped.missing_in_a) + len(grouped.mismatched)
+    assert grouped.total == expected
+
+
 def test_returns_grouped_diff_instance(empty_result: DiffResult) -> None:
     assert isinstance(group_diff(empty_result), GroupedDiff)
