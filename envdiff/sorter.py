@@ -20,6 +20,11 @@ class GroupedDiff:
     def total(self) -> int:
         return len(self.missing_in_b) + len(self.missing_in_a) + len(self.mismatched)
 
+    @property
+    def is_clean(self) -> bool:
+        """Return True when there are no differences across all buckets."""
+        return self.total == 0
+
 
 def group_diff(result: DiffResult, sort_keys: bool = True) -> GroupedDiff:
     """Split a DiffResult into three sorted buckets.
