@@ -1,63 +1,74 @@
-"""CLI decorator that adds --tag options and prints tagged key groups."""
-
-from __future__ import annotations
-
-import functools
-from typing import Callable
+"""CLI integration for tag-based filtering and display."""
 
 import click
-
 from envdiff.tagger import tag_diff
 
 
-def tag_options(cmd: Callable) -> Callable:
-    """Decorator that adds ``--tag`` option to a Click command."""
-
-    @click.option(
-        "--tag",
+def tag_options(func):
+    """Decorator that adds --tag-rules and --filter-tag options to a command."""
+    func = click.option(
+        "--tag-rules",
         "tag_rules",
         multiple=True,
-        metavar="LABEL:GLOB",
-        help=(
-            "Tag keys matching GLOB with LABEL.  "
-            "May be repeated, e.g. --tag db:DB_* --tag secret:*SECRET*"
-        ),
-    )
-    @functools.wraps(cmd)
-    def wrapper(*args, **kwargs):
-        return cmd(*args, **kwargs)
+        metavar="PATTERN:TAG",
+        help="Assign TAG to keys matching PATTERN glob (e.g. 'DB_*:database').",
+    )(func)
+    func = click.option(
+        "--filter-tag",
+        "filter_tag",
+        default=None,
+        metavar="TAG",
+        help="Only show keys that have been assigned this tag.",
+    )(func)
+    return func
 
-    return wrapper
 
+def apply_tags(diff_result, tag_rules, filter_tag):
+    """Apply tag rules to a DiffResult and optionally filter by tag.
 
-def apply_tags(result, tag_rules: tuple[str, ...]) -> None:
-    """Parse *tag_rules*, build a TaggedDiff, and print a tag summary.
+    Parameters
+    ----------
+    diff_result:
+        A ``DiffResult`` instance from ``envdiff.comparator``.
+    tag_rules:
+        Iterable of strings in ``PATTERN:TAG`` format.
+    filter_tag:
+        If given, only keys carrying this tag are kept in the returned result.
 
-    Silently does nothing when no rules are provided.
+    Returns
+    -------
+    DiffResult
+        Possibly filtered diff result.
     """
-    if not tag_rules:
-        return
+    if not tag_rules and not filter_tag:
+        return diff_result
 
+    # Parse "PATTERN:TAG" strings into a dict mapping tag -> [patterns]
     rules: dict[str, list[str]] = {}
-    for raw in tag_rules:
-        if ":" not in raw:
+    for rule in tag_rules:
+        if ":" not in rule:
             raise click.BadParameter(
-                f"Expected LABEL:GLOB format, got {raw!r}",
-                param_hint="--tag",
+                f"Tag rule {rule!r} must be in PATTERN:TAG format.",
+                param_hint="--tag-rules",
             )
-        label, glob = raw.split(":", 1)
-        rules.setdefault(label.strip(), []).append(glob.strip())
+        pattern, tag = rule.split(":", 1)
+        rules.setdefault(tag, []).append(pattern)
 
-    tagged = tag_diff(result, rules)
+    tagged = tag_diff(diff_result, rules)
 
-    if not any(tagged.tags.values()):
-        click.echo("[tags] no keys matched any tag rule")
-        return
+    if not filter_tag:
+        return diff_result
 
-    click.echo("[tags]")
-    for label in sorted(rules):
-        keys = tagged.keys_for_tag(label)
-        if keys:
-            click.echo(f"  {label}: {', '.join(sorted(keys))}")
-        else:
-            click.echo(f"  {label}: (no matches)")
+    # Restrict diff_result to keys that carry filter_tag
+    matching_keys = tagged.keys_for_tag(filter_tag)
+
+    from envdiff.comparator import DiffResult
+
+    return DiffResult(
+        only_in_a={k: v for k, v in diff_result.only_in_a.items() if k in matching_keys},
+        only_in_b={k: v for k, v in diff_result.only_in_b.items() if k in matching_keys},
+        mismatched={
+            k: v for k, v in diff_result.mismatched.items() if k in matching_keys
+        },
+        matching={k: v for k, v in diff_result.matching.items() if k in matching_keys},
+    )
