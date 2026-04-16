@@ -30,3 +30,11 @@ addopts = "--tb=short"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["envdiff*"]
+
+[tool.coverage.run]
+source = ["envdiff"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
