@@ -75,3 +75,9 @@ def test_wildcard_pattern_matches_all(rich_result):
     tagged = tag_diff(rich_result, {"all": ["*"]})
     for key in tagged.tags:
         assert "all" in tagged.tags[key]
+
+
+def test_empty_tag_rules_gives_empty_tags(rich_result):
+    """When no tag rules are provided, no keys should be tagged."""
+    tagged = tag_diff(rich_result, {})
+    assert tagged.tags == {}
