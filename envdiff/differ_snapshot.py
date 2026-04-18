@@ -57,7 +57,10 @@ def load_snapshot(store: Path, name: str) -> Dict[str, Optional[str]]:
     p = _snapshot_path(store, name)
     if not p.exists():
         raise FileNotFoundError(f"Snapshot '{name}' not found in {store}")
-    return json.loads(p.read_text())
+    try:
+        return json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Snapshot '{name}' is corrupted or not valid JSON: {exc}") from exc
 
 
 def diff_against_snapshot(store: Path, name: str, env_paths: List[str]) -> SnapshotReport:
@@ -68,3 +71,13 @@ def diff_against_snapshot(store: Path, name: str, env_paths: List[str]) -> Snaps
         diff = compare(baseline, current)
         entries.append(SnapshotEntry(path=p, diff=diff))
     return SnapshotReport(entries=entries)
+
+
+def list_snapshots(store: Path) -> List[str]:
+    """Return the names of all snapshots saved in *store*."""
+    if not store.exists():
+        return []
+    return [
+        p.name.removesuffix(".snapshot.json")
+        for p in sorted(store.glob("*.snapshot.json"))
+    ]
