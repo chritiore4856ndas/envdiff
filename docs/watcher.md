@@ -31,6 +31,24 @@ watch(
 )
 ```
 
+## Stopping the watcher
+
+To stop the watcher programmatically, call the `stop()` method on the object
+returned by `watch()`:
+
+```python
+watcher = watch(
+    paths=[Path(".env.development"), Path(".env.production")],
+    callback=on_change,
+)
+
+# later, when you want to shut it down:
+watcher.stop()
+```
+
+This is useful in tests or when embedding the watcher inside a larger
+application that manages its own lifecycle.
+
 ## CLI usage
 
 ```
