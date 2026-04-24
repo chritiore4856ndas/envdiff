@@ -42,10 +42,14 @@ envdiff .env.development .env.production
 | `--strict` | Exit with code 1 if any differences are found |
 | `--ignore KEY` | Skip a specific key during comparison |
 | `--json` | Output results as JSON |
+| `--no-values` | Hide values in output (useful for sharing diffs safely) |
 
 ```bash
 # Ignore keys and output JSON
 envdiff .env.staging .env.production --ignore SECRET_KEY --json
+
+# Compare without exposing secret values
+envdiff .env.development .env.production --no-values
 ```
 
 ---
