@@ -85,3 +85,14 @@ def test_as_dict_structure():
     assert "entries" in d
     assert d["entries"][0]["key"] == "K"
     assert "frequency" in d["entries"][0]
+
+
+def test_mismatched_keys_are_included_in_entries():
+    """Keys that appear in mismatched should also be tracked by bloom_diff."""
+    r1 = _result(mismatched={"PORT": ("8080", "9090")})
+    r2 = _result(mismatched={"PORT": ("8080", "9090")})
+    r3 = _result(matching=["PORT"])
+    report = bloom_diff([r1, r2, r3])
+    freqs = {e.key: e.frequency for e in report.entries}
+    assert "PORT" in freqs
+    assert freqs["PORT"] == 1.0
