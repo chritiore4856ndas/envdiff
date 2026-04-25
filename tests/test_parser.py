@@ -68,6 +68,17 @@ def test_invalid_syntax_raises(tmp_env):
         parse_env_file(path)
 
 
+def test_invalid_syntax_includes_line_number(tmp_env):
+    """Error message should mention the offending line number."""
+    path = tmp_env("""
+        VALID=ok
+        THIS IS INVALID
+        ALSO_VALID=yes
+    """)
+    with pytest.raises(ValueError, match="line 2"):
+        parse_env_file(path)
+
+
 @pytest.mark.parametrize("value,expected", [
     ('"quoted"', "quoted"),
     ("'quoted'", "quoted"),
