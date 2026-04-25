@@ -62,6 +62,13 @@ class PolarityReport:
     def neutral_keys(self) -> List[PolarityEntry]:
         return [e for e in self.entries if e.dominant == "neutral"]
 
+    def get(self, key: str) -> PolarityEntry | None:
+        """Return the PolarityEntry for *key*, or None if not found."""
+        for entry in self.entries:
+            if entry.key == key:
+                return entry
+        return None
+
     def as_dict(self) -> dict:
         return {
             "entries": [e.as_dict() for e in self.entries],
