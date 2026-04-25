@@ -55,6 +55,11 @@ def apply_lint(lint_paths: tuple[str, ...], lint_strict: bool) -> None:
     any_warning = False
 
     for p in lint_paths:
+        if not Path(p).exists():
+            click.echo(f"\nLinting: {p}")
+            click.echo(f"  [ERROR] File not found: {p}", err=True)
+            any_error = True
+            continue
         result = lint_env_file(p)
         _print_result(result)
         if result.errors:
